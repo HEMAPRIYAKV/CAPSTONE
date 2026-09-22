@@ -57,3 +57,14 @@ Thumbs.db
 # Large satellite dataset
 # ==============================
 data/SEN12FLOOD/
+
+# ==============================
+# Generated outputs
+# ==============================
+cache/
+results/
+
+# ==============================
+# Large flood hazard dataset
+# ==============================
+data/flood/chennai_flood_hazard.kml

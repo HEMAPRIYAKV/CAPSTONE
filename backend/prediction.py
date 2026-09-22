@@ -2,6 +2,8 @@ import joblib
 import pandas as pd
 import os
 
+from backend.risk_engine import assess_risk
+
 
 # ============================================================
 # LOAD XGBOOST MODEL
@@ -23,6 +25,10 @@ model = joblib.load(MODEL_PATH)
 
 def predict_flood(data):
 
+    # --------------------------------------------------------
+    # FEATURES USED BY THE TRAINED XGBOOST MODEL
+    # --------------------------------------------------------
+
     features = [
         "actual",
         "rainfall_1day",
@@ -36,23 +42,44 @@ def predict_flood(data):
         "wind_speed"
     ]
 
-    # Prepare input for XGBoost
+
+    # --------------------------------------------------------
+    # PREPARE MODEL INPUT
+    # --------------------------------------------------------
+
     input_data = pd.DataFrame([{
 
-        "actual": data["rainfall_1day"],
+        # The existing trained model expects "actual".
+        # We preserve the same mapping used previously.
+        "actual":
+            data["rainfall_1day"],
 
-        "rainfall_1day": data["rainfall_1day"],
-        "rainfall_3day": data["rainfall_3day"],
-        "rainfall_7day": data["rainfall_7day"],
+        "rainfall_1day":
+            data["rainfall_1day"],
 
-        "normal": data["normal"],
-        "deviation": data["deviation"],
+        "rainfall_3day":
+            data["rainfall_3day"],
 
-        "temperature": data["temperature"],
-        "humidity": data["humidity"],
-        "pressure": data["pressure"],
-        "wind_speed": data["wind_speed"]
+        "rainfall_7day":
+            data["rainfall_7day"],
 
+        "normal":
+            data["normal"],
+
+        "deviation":
+            data["deviation"],
+
+        "temperature":
+            data["temperature"],
+
+        "humidity":
+            data["humidity"],
+
+        "pressure":
+            data["pressure"],
+
+        "wind_speed":
+            data["wind_speed"]
     }])
 
 
@@ -64,37 +91,16 @@ def predict_flood(data):
         input_data[features]
     )[0][1]
 
-    probability_percent = float(probability) * 100
+    probability = float(probability)
 
 
     # ========================================================
-    # RISK CLASSIFICATION
+    # RISK ASSESSMENT
     # ========================================================
 
-    if probability_percent < 30:
-
-        risk = "LOW RISK"
-
-        action = (
-            "No immediate evacuation required"
-        )
-
-    elif probability_percent < 70:
-
-        risk = "MEDIUM RISK"
-
-        action = (
-            "Monitor the situation and "
-            "prepare for evacuation"
-        )
-
-    else:
-
-        risk = "RISKY"
-
-        action = (
-            "Evacuate to a safe shelter"
-        )
+    risk_result = assess_risk(
+        probability
+    )
 
 
     # ========================================================
@@ -103,13 +109,15 @@ def predict_flood(data):
 
     return {
 
-        "probability": round(
-            probability_percent,
-            2
-        ),
+        "probability":
+            risk_result["probability_percent"],
 
-        "risk": risk,
+        "probability_decimal":
+            risk_result["flood_probability"],
 
-        "action": action
+        "risk":
+            risk_result["risk_level"],
 
+        "action":
+            risk_result["action"]
     }

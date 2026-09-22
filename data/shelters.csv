@@ -1,0 +1,5 @@
+id,name,latitude,longitude,capacity,available_capacity,accessibility
+S001,Chennai Emergency Shelter 1,13.0604,80.2496,500,500,true
+S002,Chennai Emergency Shelter 2,13.0732,80.2609,300,300,true
+S003,Chennai Emergency Shelter 3,13.0478,80.2098,400,400,true
+S004,Chennai Emergency Shelter 4,13.1015,80.2805,250,250,true
