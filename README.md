@@ -1,308 +1,630 @@
-# IDIECS – Flood Prediction and Evacuation Routing System
+# IDIECS – Integrated Disaster Intelligence and Emergency Coordination
 
-**Integrated Disaster Intelligence and Emergency Coordination System (IDIECS)**
+## Integrated Disaster Intelligence and Emergency Coordination Using XGBoost Flood Prediction and Risk-Aware A* Routing
 
-An AI-powered flood risk prediction and evacuation routing system that combines historical weather and flood-event data with real-time weather information to estimate flood risk and identify suitable evacuation routes.
+**IDIECS** is an AI-driven disaster intelligence and emergency coordination system designed to support flood-risk assessment and evacuation planning.
+
+The system combines **XGBoost-based flood prediction, real-time weather information, spatial flood-hazard data, OpenStreetMap road networks, risk-aware A* routing, shelter evaluation, dynamic rerouting, and emergency alerts** into an integrated disaster-response pipeline.
 
 ---
 
 ## 📌 Project Overview
 
-Floods are one of the most frequent natural disasters and can cause severe damage to life, infrastructure, and transportation networks. Early identification of flood risk and efficient evacuation planning can help reduce the impact of such disasters.
+Floods can affect not only residential areas and infrastructure but also the accessibility and safety of transportation networks. A useful evacuation-support system therefore needs to consider both the **probability of flooding** and the **risk associated with individual road segments**.
 
-**IDIECS** is designed to provide:
+IDIECS addresses this by connecting flood prediction with geospatial risk-aware routing.
 
-* 🌧️ Flood risk prediction using machine learning
-* 📊 Analysis of historical rainfall and weather data
-* 🌐 Real-time weather data retrieval through an API
-* 🗺️ Road-network-based evacuation routing
-* 🚨 Flood probability and risk-level classification
-* 🚗 Shortest evacuation route calculation using Dijkstra's algorithm
+The current system provides:
 
-The system combines **Machine Learning + Real-Time Weather Data + OpenStreetMap Road Networks** to support disaster-response decision making.
+- 🌧️ Flood probability prediction using XGBoost
+- 📊 Historical weather and flood-event analysis
+- 🌐 Real-time weather integration
+- 🚨 Flood-risk classification
+- 🗺️ OpenStreetMap-based real road networks
+- 🌊 Spatial flood-hazard exposure for road segments
+- 🛣️ Risk-aware evacuation routing using A* search
+- 🏠 Shelter candidate evaluation
+- 🔄 Dynamic route recalculation when flood probability changes
+- 📢 Risk-based emergency alert generation
+
+The overall system combines:
+
+**Machine Learning + Real-Time Weather + Geospatial Flood Data + OpenStreetMap + Graph Routing**
+
+to provide an integrated flood evacuation decision-support prototype.
 
 ---
 
-## 🎯 Objectives
+# 🎯 Objectives
 
-1. Predict the probability of a flood occurrence using historical weather and flood-event data.
-2. Classify locations into different flood-risk levels.
-3. Integrate real-time weather information into the prediction workflow.
-4. Represent road networks using OpenStreetMap data.
-5. Identify an efficient evacuation route using Dijkstra's shortest-path algorithm.
-6. Provide a practical prototype for real-time flood-risk monitoring and evacuation support.
+The main objectives of IDIECS are:
+
+1. Predict flood probability using historical weather and flood-event data.
+2. Integrate current weather conditions into the flood-prediction pipeline.
+3. Classify predicted flood probability into LOW, MEDIUM, and HIGH risk levels.
+4. Represent real road networks using OpenStreetMap data.
+5. Incorporate spatial flood-hazard information into road segments.
+6. Calculate effective road risk using flood probability and spatial road exposure.
+7. Identify evacuation routes using risk-aware A* search.
+8. Evaluate evacuation shelters using route distance, flood exposure, capacity, and accessibility.
+9. Support dynamic rerouting when flood probability changes significantly.
+10. Generate emergency alerts according to the identified flood-risk level.
 
 ---
 
-## 🏗️ System Architecture
+# 🏗️ System Architecture
 
 ```text
-                HISTORICAL DATA
-                     │
-        ┌────────────┴────────────┐
-        │                         │
- Historical Weather          Flood Events
-        │                         │
-        └────────────┬────────────┘
-                     ↓
-              Data Preprocessing
-                     ↓
-              Feature Engineering
-                     ↓
-               XGBoost Model
-                     ↓
-              flood_model.pkl
-                     │
-                     │
-                     ↓
-              FLOOD PREDICTION
-                     ↑
-                     │
-              Real-Time Weather
-                     │
-              Weather API
-                     │
-        ┌────────────┼────────────┐
-        ↓            ↓            ↓
-     Rainfall     Humidity    Temperature
-        │            │            │
-        └────────────┼────────────┘
-                     ↓
-              Flood Probability
-                     ↓
-                 Risk Level
-          ┌──────────┼──────────┐
-          ↓          ↓          ↓
-         LOW       MEDIUM      HIGH
-                                │
-                                ↓
-                     OpenStreetMap
-                      Road Network
-                                ↓
-                         Dijkstra Algorithm
-                                ↓
-                     Evacuation Route
-```
+                  HISTORICAL WEATHER DATA
+                           +
+                    FLOOD EVENT DATA
+                           │
+                           ▼
+                  DATA PREPROCESSING
+                           │
+                           ▼
+                   FEATURE ENGINEERING
+                           │
+                           ▼
+                    XGBOOST TRAINING
+                           │
+                           ▼
+                    FLOOD MODEL (.pkl)
+                           │
+                           │
+                           ▼
+                ┌─────────────────────┐
+                │   REAL-TIME WEATHER │
+                │        API          │
+                └──────────┬──────────┘
+                           │
+                           ▼
+                   CURRENT WEATHER
+                           │
+                           ▼
+                    XGBOOST MODEL
+                           │
+                           ▼
+                  FLOOD PROBABILITY
+                           │
+                           ▼
+                    RISK ENGINE
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+           LOW          MEDIUM          HIGH
+             │             │             │
+             │             │             ▼
+             │             │       EVACUATION
+             │             │          SUPPORT
+             │             │             │
+             └─────────────┴─────────────┘
+                           │
+                           ▼
+                 FLOOD HAZARD DATA
+                           │
+                           ▼
+                 SPATIAL ROAD EXPOSURE
+                           │
+                           ▼
+                 OPENSTREETMAP NETWORK
+                           │
+                           ▼
+                 RISK-AWARE A* ROUTING
+                           │
+                           ▼
+                  SHELTER EVALUATION
+                           │
+                           ▼
+                 RECOMMENDED ROUTE
+                           +
+                 SHELTER INFORMATION
+                           │
+                           ▼
+                  ALERT GENERATION
+                           │
+                           ▼
+                  DYNAMIC REROUTING
 
----
-
-## 🔬 Methodology
-
-### 1. Data Collection
+🔬 Methodology
+1. Data Collection
 
 The project uses historical weather, rainfall, and flood-event information for model development.
 
-The project contains datasets such as:
+The repository contains datasets including:
 
-* Historical weather data
-* Rainfall data
-* Flood-event data
-* State/city weather data
-* Training datasets
-* Prototype datasets
+Historical weather data
+Rainfall data
+Flood-event data
+State/city weather data
+Training datasets
+Prototype datasets
 
-Satellite imagery from **SEN12FLOOD** is also used as part of the project data resources.
+The project also uses a Chennai flood-hazard dataset containing spatial flood-risk polygons.
 
-> **Note:** The SEN12FLOOD satellite dataset is not included in this GitHub repository because its local dataset size is approximately 17+ GB. It can be stored separately and referenced when required.
+The SEN12FLOOD satellite dataset is maintained separately because of its large size and is excluded from the GitHub repository.
 
----
+2. Data Preprocessing
 
-### 2. Data Preprocessing
-
-The collected datasets are processed to make them suitable for machine-learning training.
+The collected datasets are processed before model training.
 
 Major preprocessing operations include:
 
-* Handling missing values
-* Removing invalid records
-* Date-based data processing
-* Combining weather and flood-event information
-* Generating rainfall-related features
-* Preparing the target flood label
-* Creating training and testing datasets
+Handling missing values
+Removing invalid records
+Date-based processing
+Combining weather and flood-event information
+Generating rainfall-related features
+Preparing flood labels
+Creating model-ready training datasets
+3. Feature Engineering
 
----
-
-### 3. Feature Engineering
-
-Rainfall-related temporal features are generated from the weather data.
+Rainfall accumulation features are generated to represent recent precipitation patterns.
 
 Important features include:
 
-* `rainfall_1day`
-* `rainfall_3day`
-* `rainfall_7day`
+rainfall_1day
+rainfall_3day
+rainfall_7day
 
-These features represent rainfall accumulated over different time periods and help the model identify rainfall patterns associated with flood events.
+Additional weather features include:
 
-Other weather-related features include:
-
-* Temperature
-* Humidity
-* Atmospheric pressure
-* Wind speed
-
----
-
-## 🤖 Machine Learning Model
-
-The project uses **XGBoost (Extreme Gradient Boosting)** for flood prediction.
-
-The model is trained using historical weather and flood-event information.
-
-### Input
-
-The model can use weather-related features such as:
-
-```text
-Rainfall
-Rainfall over recent days
 Temperature
 Humidity
 Pressure
 Wind Speed
-```
 
-### Output
+The implementation also uses:
 
-The model produces a **flood probability**, which is then converted into a flood-risk category.
+actual
+normal
+deviation
 
-```text
-Weather Features
-       ↓
-    XGBoost
-       ↓
+where rainfall deviation represents the difference between observed rainfall and the historical normal.
+
+🤖 XGBoost Flood Prediction
+
+The flood prediction component uses XGBoost (Extreme Gradient Boosting).
+
+The trained model learns relationships between weather/rainfall conditions and historical flood events.
+
+Model Input
+
+The current prediction implementation uses:
+
+actual
+rainfall_1day
+rainfall_3day
+rainfall_7day
+normal
+deviation
+temperature
+humidity
+pressure
+wind_speed
+Prediction Process
+Current Weather
+      │
+      ▼
+Feature Construction
+      │
+      ▼
+XGBoost Model
+      │
+      ▼
+predict_proba()
+      │
+      ▼
 Flood Probability
-       ↓
-Risk Classification
-       ↓
-LOW / MEDIUM / HIGH
-```
 
 The trained model is stored as:
 
-```text
 ml/flood_model.pkl
-```
+🚨 Flood Risk Assessment
 
----
+The predicted probability is passed to the risk engine.
 
-## 🚨 Flood Risk Classification
+The current prototype uses configurable thresholds:
 
-The predicted probability is interpreted to determine the flood-risk level.
+Probability < 0.30
+        ↓
+      LOW
 
-```text
+0.30 ≤ Probability < 0.70
+        ↓
+     MEDIUM
+
+Probability ≥ 0.70
+        ↓
+      HIGH
+
+The risk engine also generates an appropriate action message.
+
+LOW
+No immediate evacuation required;
+continue monitoring conditions.
+MEDIUM
+Monitor the situation and prepare
+for possible evacuation.
+HIGH
+Evacuate to a safe shelter using
+the recommended route.
+
+Implementation:
+
+backend/risk_engine.py
+🌐 Real-Time Weather Integration
+
+The system can retrieve current weather conditions through the weather API.
+
+The current weather pipeline obtains information such as:
+
+Temperature
+Humidity
+Rainfall
+Atmospheric pressure
+Wind speed
+
+The current weather values are transformed into the same feature structure expected by the trained XGBoost model.
+
+Weather API
+    ↓
+Current Weather
+    ↓
+Feature Construction
+    ↓
+XGBoost
+    ↓
 Flood Probability
-        │
-        ├── Low probability   → LOW RISK
-        │
-        ├── Moderate probability → MEDIUM RISK
-        │
-        └── High probability  → HIGH RISK
-```
-
-The exact thresholds used by the implementation are defined in the prediction module.
-
----
-
-## 🌐 Real-Time Weather Integration
-
-The system can retrieve current weather information using a weather API.
-
-The real-time weather module obtains information such as:
-
-* Temperature
-* Relative humidity
-* Atmospheric pressure
-* Wind speed
-* Rainfall/weather information
-
-The real-time values can then be passed through the trained flood prediction pipeline.
+    ↓
+Risk Level
 
 Relevant implementation:
 
-```text
 backend/weather_api.py
-ml/test_weather_api.py
-```
+backend/prediction.py
+backend/main.py
+🌊 Spatial Flood Hazard Integration
 
----
+A major extension of the current system is the integration of spatial flood-hazard information into the road network.
 
-## 🗺️ Evacuation Routing
+The Chennai flood-hazard dataset contains polygons classified as:
 
-After identifying flood risk, the system uses a road network for evacuation planning.
+VERY LOW
+LOW
+MODERATE
+HIGH
+VERY HIGH
 
-The road network is obtained from **OpenStreetMap**.
+These categories are converted into normalized exposure values.
+
+VERY LOW   → 0.10
+LOW        → 0.30
+MODERATE   → 0.50
+HIGH       → 0.75
+VERY HIGH  → 0.95
+
+Road segments are spatially evaluated against the flood-hazard polygons.
+
+Flood Hazard Polygons
+          │
+          ▼
+     Spatial Join
+          │
+          ▼
+    Road Segments
+          │
+          ▼
+    Flood Exposure
+
+Implementation:
+
+backend/flood_exposure.py
+
+The large KML dataset is intentionally excluded from GitHub and must be provided locally.
+
+🛣️ Real Road Network
+
+The system uses OpenStreetMap road data through OSMnx.
+
+The road network is represented as a graph:
+
+Road Intersections → Nodes
+Road Segments       → Edges
+
+Each road segment can contain information such as:
+
+Length
+Flood Exposure
+Road Condition
+Risk Level
+Routing Cost
+
+Implementation:
+
+backend/road_network.py
+⚠️ Road Risk Calculation
+
+Road risk combines the predicted flood probability with the spatial flood exposure of the individual road segment.
+
+The prototype calculates effective risk as:
+
+Effective Risk =
+    0.7 × Flood Probability
+    +
+    0.3 × Road Flood Exposure
+
+The resulting value is classified as:
+
+LOW
+MEDIUM
+HIGH
+
+Blocked roads are assigned infinite routing cost and are therefore excluded from the route.
+
+Implementation:
+
+backend/road_risk.py
+
+The weights and penalties are configurable prototype parameters and should be further calibrated using experimental validation before being interpreted as universally optimal values.
+
+🧭 Risk-Aware A* Evacuation Routing
+
+Unlike a conventional shortest-path algorithm, IDIECS does not consider distance alone.
+
+The routing system evaluates:
+
+Distance
++
+Flood Risk
++
+Road Exposure
++
+Road Condition
 
 The routing process is:
 
-```text
 Source Location
-      ↓
-Road Network
-      ↓
-Flood-Risk Information
-      ↓
-Identify Suitable/Accessible Roads
-      ↓
-Dijkstra Algorithm
-      ↓
-Shortest Evacuation Route
-      ↓
-Safe Destination
-```
+       │
+       ▼
+Nearest Road Node
+       │
+       ▼
+OpenStreetMap Road Graph
+       │
+       ▼
+Flood Exposure Information
+       │
+       ▼
+Risk-Aware Edge Cost
+       │
+       ▼
+A* Search
+       │
+       ▼
+Evacuation Route
 
-The routing implementation is available in:
+The implementation uses the A* search strategy to identify a route while considering the risk-adjusted cost of road segments.
 
-```text
+Implementation:
+
 backend/routing.py
-```
+🏠 Shelter Evaluation
 
----
+The system includes a prototype shelter-selection component.
 
-## 🧪 Testing Modules
+Shelter candidates are evaluated using factors including:
 
-The project contains separate modules for testing different components.
+Route distance
+Average route flood exposure
+Available capacity
+Accessibility
 
-Examples include:
+The prototype shelter score is calculated from these factors.
 
-```text
-ml/test_prediction.py
-ml/test_probability.py
-ml/test_weather_api.py
-```
+Shelter Candidate
+       │
+       ├── Route Distance
+       ├── Flood Exposure
+       ├── Capacity
+       └── Accessibility
+              │
+              ▼
+        Shelter Score
+              │
+              ▼
+       Shelter Selection
 
-These modules are used to verify:
+Implementation:
 
-* Flood prediction
-* Probability generation
-* Weather API connectivity
-* Model behaviour
+backend/shelter.py
+backend/shelter_service.py
+Current data status
 
----
+The current data/shelters.csv contains development-only prototype shelter records.
 
-## 📂 Project Structure
+These should not be interpreted as verified live emergency-shelter availability.
 
-```text
+Future integration will replace the prototype records with verified disaster-management/relief-centre data.
+
+🔄 Dynamic Rerouting
+
+Flood conditions can change during an evacuation.
+
+The system therefore includes a dynamic route-management component.
+
+Initial Flood Probability
+          │
+          ▼
+     Calculate Route
+          │
+          ▼
+   Monitor New Probability
+          │
+          ▼
+   Probability Changed?
+       /          \
+     YES           NO
+      │             │
+      ▼             ▼
+ Recalculate      Keep Route
+    Route
+
+The current prototype triggers route recalculation when the flood probability changes by at least:
+
+0.05
+
+Implementation:
+
+backend/dynamic_routing.py
+📢 Emergency Alerts
+
+The alert module generates messages according to the current flood-risk level.
+
+Flood Probability
+       │
+       ▼
+Risk Classification
+       │
+ ┌─────┼─────┐
+ ▼     ▼     ▼
+LOW  MEDIUM  HIGH
+ │     │      │
+ ▼     ▼      ▼
+Monitor  Prepare  Evacuate
+
+Implementation:
+
+backend/alerts.py
+🔗 Integrated Disaster Workflow
+
+The complete implemented decision-support flow is:
+
+Real-Time Weather
+       │
+       ▼
+Feature Construction
+       │
+       ▼
+XGBoost Flood Prediction
+       │
+       ▼
+Flood Probability
+       │
+       ▼
+Risk Engine
+       │
+       ▼
+Flood Risk Level
+       │
+       ├───────────────┐
+       │               │
+       ▼               ▼
+Monitoring       Evacuation Support
+                       │
+                       ▼
+              Flood Hazard Map
+                       │
+                       ▼
+              Road Flood Exposure
+                       │
+                       ▼
+             OpenStreetMap Graph
+                       │
+                       ▼
+              Risk-Aware A* Search
+                       │
+                       ▼
+                Shelter Evaluation
+                       │
+                       ▼
+              Evacuation Route
+                       │
+                       ▼
+                Alert Generation
+                       │
+                       ▼
+               Dynamic Rerouting
+🧪 Testing Modules
+
+The current implementation contains component-level testing modules:
+
+backend/test_road_network.py
+backend/test_flood_exposure.py
+backend/test_risk_routing.py
+backend/test_real_routing.py
+backend/test_shelter_routing.py
+
+These tests are used to verify:
+
+Road-network loading
+Flood-hazard loading
+Spatial road exposure
+Risk-aware routing
+Real road-network routing
+Shelter evaluation
+Evacuation-route generation
+📊 Current Prototype Results
+
+The current implementation was tested using a Chennai road network and flood-hazard dataset.
+
+The spatial flood-exposure processing successfully loaded:
+
+7,453 flood polygons
+
+and classified road segments into multiple exposure levels.
+
+A risk-aware routing experiment demonstrated a trade-off between route distance and flood exposure.
+
+Example prototype result:
+
+Shortest-distance route:
+Distance              = 13.196 km
+Average flood exposure = 0.3219
+
+Risk-aware route:
+Distance              = 26.17 km
+Average flood exposure = 0.1523
+
+Additional distance   = 12.974 km
+
+This demonstrates that the routing system can select a longer route when the route's spatial flood exposure is lower.
+
+These values represent prototype experimental results for the tested network and parameter configuration, not universal routing guarantees.
+
+📂 Project Structure
 CAPSTONE/
 │
 ├── backend/
 │   ├── main.py
 │   ├── prediction.py
+│   ├── weather_api.py
+│   ├── risk_engine.py
+│   ├── road_risk.py
+│   ├── road_network.py
+│   ├── flood_exposure.py
 │   ├── routing.py
-│   └── weather_api.py
+│   ├── shelter.py
+│   ├── shelter_service.py
+│   ├── evacuation_service.py
+│   ├── dynamic_routing.py
+│   ├── alerts.py
+│   ├── disaster_service.py
+│   │
+│   └── tests/
+│       ├── test_flood_exposure.py
+│       ├── test_real_routing.py
+│       ├── test_risk_routing.py
+│       ├── test_road_network.py
+│       └── test_shelter_routing.py
 │
 ├── data/
 │   ├── flood/
-│   │   └── emdat.csv
+│   │   ├── README.md
+│   │   └── chennai_flood_hazard.kml
 │   │
 │   ├── weather/
-│   │   ├── cities.csv
-│   │   ├── clean_weather.csv
-│   │   ├── historical_weather.csv
-│   │   ├── state_weather.csv
-│   │   └── weather.csv
-│   │
+│   ├── shelters.csv
 │   ├── balanced_training_data.csv
 │   ├── flood_events.csv
 │   ├── flood_events_clean.csv
@@ -310,279 +632,264 @@ CAPSTONE/
 │   └── training_data.csv
 │
 ├── ml/
-│   ├── balance_dataset.py
-│   ├── download_state_weather.py
-│   ├── download_weather.py
 │   ├── flood_model.pkl
-│   ├── inspect_weather.py
-│   ├── map_cities.py
-│   ├── merge_data.py
-│   ├── predict_flood.py
 │   ├── preprocess.py
-│   ├── process_flood.py
-│   ├── test_prediction.py
-│   ├── test_probability.py
-│   ├── test_weather_api.py
-│   └── train_model.py
+│   ├── predict_flood.py
+│   ├── merge_data.py
+│   ├── balance_dataset.py
+│   └── ...
+│
+├── frontend/
 │
 ├── .gitignore
 ├── README.md
 └── requirements.txt
-```
-
----
-
-## 🛠️ Technologies Used
-
-### Programming
-
-* Python
-* JavaScript *(if used by the frontend)*
-
-### Machine Learning
-
-* XGBoost
-* Scikit-learn
-* Pandas
-* NumPy
-* Joblib
-
-### Data Processing
-
-* Pandas
-* NumPy
-
-### Weather
-
-* Weather API
-* Historical weather datasets
-
-### Mapping & Routing
-
-* OpenStreetMap
-* Dijkstra's shortest-path algorithm
-
-### Development
-
-* Visual Studio Code
-* Git
-* GitHub
-
----
-
-## ⚙️ Installation
-
-### 1. Clone the repository
-
-```bash
+🛠️ Technologies Used
+Programming
+Python
+JavaScript (if used by the frontend)
+Machine Learning
+XGBoost
+Scikit-learn
+Pandas
+NumPy
+Joblib
+Geospatial Processing
+GeoPandas
+Shapely
+OSMnx
+OpenStreetMap
+Graph and Routing
+NetworkX
+A* search
+Risk-aware edge-cost calculation
+Weather
+Weather API
+Historical weather datasets
+Development
+Visual Studio Code
+Git
+GitHub
+⚙️ Installation
+1. Clone the repository
 git clone https://github.com/HEMAPRIYAKV/CAPSTONE.git
 cd CAPSTONE
-```
-
-### 2. Create a virtual environment
-
-```bash
+2. Create a virtual environment
 python -m venv venv
-```
-
-### 3. Activate the virtual environment
-
-#### Windows
-
-```powershell
+3. Activate the virtual environment
+Windows
 venv\Scripts\activate
-```
-
-#### Linux/macOS
-
-```bash
+Linux/macOS
 source venv/bin/activate
-```
-
-### 4. Install dependencies
-
-```bash
+4. Install dependencies
 pip install -r requirements.txt
-```
+🌊 Flood Hazard Dataset Setup
 
----
+The Chennai flood-hazard KML is approximately 38 MB and is intentionally excluded from the GitHub repository.
 
-## ▶️ Running the Project
+Place the dataset locally at:
 
-### Run the backend
+data/flood/chennai_flood_hazard.kml
+
+Refer to:
+
+data/flood/README.md
+
+for dataset information.
+
+▶️ Running the Project
 
 From the project root:
 
-```bash
 python backend/main.py
-```
 
-If the backend is implemented using FastAPI/UvicORN, the corresponding server command can be used according to the implementation.
+If the backend uses FastAPI/Uvicorn, the corresponding server command can be used according to the current backend configuration.
 
----
-
-## 🧪 Testing
-
-### Test weather API
-
-```bash
-python ml/test_weather_api.py
-```
-
-### Test flood prediction
-
-```bash
-python ml/test_prediction.py
-```
-
-### Test flood probability
-
-```bash
-python ml/test_probability.py
-```
-
----
-
-## 📊 Dataset Information
-
-The repository contains processed datasets required for the machine-learning pipeline.
+🧪 Running Tests
+Test road network
+python -m backend.test_road_network
+Test flood exposure
+python -m backend.test_flood_exposure
+Test risk-aware routing
+python -m backend.test_risk_routing
+Test real road routing
+python -m backend.test_real_routing
+Test shelter routing
+python -m backend.test_shelter_routing
+📊 Dataset Information
 
 Important datasets include:
 
-| Dataset                       | Purpose                          |
-| ----------------------------- | -------------------------------- |
-| `weather.csv`                 | Weather/rainfall information     |
-| `clean_weather.csv`           | Cleaned weather data             |
-| `historical_weather.csv`      | Historical weather information   |
-| `state_weather.csv`           | State-level weather information  |
-| `cities.csv`                  | City information                 |
-| `flood_events.csv`            | Flood-event records              |
-| `flood_events_clean.csv`      | Processed flood-event data       |
-| `training_data.csv`           | Model training dataset           |
-| `balanced_training_data.csv`  | Balanced training dataset        |
-| `prototype_training_data.csv` | Prototype training dataset       |
-| `emdat.csv`                   | Flood/disaster event information |
-
-### SEN12FLOOD
+Dataset	Purpose
+weather.csv	Weather and rainfall information
+clean_weather.csv	Cleaned weather data
+historical_weather.csv	Historical weather information
+state_weather.csv	State-level weather information
+cities.csv	City information
+flood_events.csv	Flood-event records
+flood_events_clean.csv	Processed flood-event data
+training_data.csv	Model training dataset
+balanced_training_data.csv	Balanced training dataset
+prototype_training_data.csv	Prototype training dataset
+emdat.csv	Disaster-event information
+chennai_flood_hazard.kml	Spatial flood-hazard polygons
+🛰️ SEN12FLOOD
 
 The SEN12FLOOD satellite imagery dataset is maintained separately because of its large size.
 
-```text
 SEN12FLOOD
 ≈ 17+ GB
-```
 
-It is therefore excluded from the GitHub repository through `.gitignore`.
+It is excluded from the GitHub repository through .gitignore.
 
----
-
-## 📈 Machine Learning Pipeline
-
-```text
+📈 Machine Learning Pipeline
 Historical Weather Data
           +
 Flood Event Data
-          ↓
+          │
+          ▼
 Data Cleaning
-          ↓
+          │
+          ▼
 Feature Engineering
-          ↓
+          │
+          ▼
 Training Dataset
-          ↓
+          │
+          ▼
 XGBoost Training
-          ↓
+          │
+          ▼
 Model Evaluation
-          ↓
+          │
+          ▼
 flood_model.pkl
-          ↓
-Real-Time Weather Input
-          ↓
+          │
+          ▼
+Real-Time Weather
+          │
+          ▼
+Feature Construction
+          │
+          ▼
 Flood Probability
-          ↓
-Risk Level
-```
+          │
+          ▼
+Risk Classification
+🚗 Risk-Aware Evacuation Pipeline
+Source Location
+      │
+      ▼
+Current Flood Probability
+      │
+      ▼
+Flood Hazard Map
+      │
+      ▼
+Road Flood Exposure
+      │
+      ▼
+OpenStreetMap Road Graph
+      │
+      ▼
+Risk-Aware Edge Cost
+      │
+      ▼
+A* Search
+      │
+      ▼
+Candidate Evacuation Routes
+      │
+      ▼
+Shelter Evaluation
+      │
+      ▼
+Recommended Evacuation Route
+🔄 Dynamic Emergency Coordination
 
----
+The system is designed as an integrated decision-support workflow rather than an isolated flood-prediction model.
 
-## 🚗 Evacuation Pipeline
+Prediction
+    ↓
+Risk Assessment
+    ↓
+Spatial Risk
+    ↓
+Route Planning
+    ↓
+Shelter Evaluation
+    ↓
+Alert
+    ↓
+Flood Probability Update
+    ↓
+Route Recalculation
 
-```text
-User/Source Location
-        ↓
-Current Flood Risk
-        ↓
-OpenStreetMap Road Network
-        ↓
-Road Graph
-        ↓
-Dijkstra Shortest Path
-        ↓
-Evacuation Route
-        ↓
-Safe Destination
-```
+This allows the prediction component to provide the risk information required by the downstream evacuation components.
 
----
-
-## 🔐 Data and Repository Notes
+🔐 Data and Repository Notes
 
 The following are intentionally excluded from GitHub:
 
-```text
 venv/
-data/SEN12FLOOD/
+.venv/
 __pycache__/
 .env
 node_modules/
 build/
 dist/
-```
+cache/
+results/
+data/SEN12FLOOD/
+data/flood/chennai_flood_hazard.kml
 
-The Python virtual environment is excluded because dependencies can be recreated using `requirements.txt`.
+The Python virtual environment is excluded because dependencies can be recreated using requirements.txt.
 
-The SEN12FLOOD dataset is excluded because of its large storage requirement.
+The SEN12FLOOD dataset and large flood-hazard KML are excluded because of their storage requirements.
 
----
-
-## 🚀 Future Enhancements
+🚀 Future Enhancements
 
 Potential future improvements include:
 
-* Integration of satellite-based flood segmentation
-* More extensive real-time rainfall monitoring
-* Live flood-risk maps
-* Dynamic road closure detection
-* Traffic-aware evacuation routing
-* Multiple evacuation destinations
-* Mobile application integration
-* Real-time emergency alerts
-* Improved model performance using additional flood-related features
-* Integration with additional disaster-management data sources
+Integration of verified official relief-centre data
+Real-time shelter operational-status integration
+Live shelter capacity/occupancy information where available
+Satellite-based flood segmentation
+Real-time rainfall monitoring
+Live flood-risk maps
+Dynamic road-closure detection
+Traffic-aware evacuation routing
+Multi-destination evacuation planning
+Mobile application integration
+Real-time emergency notifications
+Improved model calibration
+Risk-penalty parameter optimization
+Larger-scale routing evaluation
+Integration with additional disaster-management data sources
+🎓 Academic Project
 
----
+IDIECS is developed as an academic capstone project focused on combining:
 
-## 🎓 Academic Project
-
-This project was developed as a **capstone project** focused on applying Artificial Intelligence, Machine Learning, weather data, geospatial information, and graph-based routing to flood disaster management.
-
-### Core Technologies
-
-```text
+Artificial Intelligence
+        +
 Machine Learning
         +
 Real-Time Weather
         +
-Geospatial Data
+Geospatial Flood Data
         +
 OpenStreetMap
         +
-Shortest-Path Routing
+Graph-Based Routing
+        +
+Emergency Coordination
         ↓
-Flood Risk Prediction & Evacuation Support
-```
+Integrated Flood Evacuation Decision Support
 
----
+The project demonstrates how a flood-probability prediction model can be connected with spatial risk analysis and evacuation routing to create an integrated disaster-response prototype.
 
-## 📄 License
+📄 License
 
 This project is developed for academic and educational purposes.
+
+
