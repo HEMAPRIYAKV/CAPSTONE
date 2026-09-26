@@ -1,7 +1,7 @@
 """
 Shelter Routing Service
 
-For every available shelter:
+For every GCC relief centre:
 
     1. Find the nearest road node
     2. Calculate a risk-aware route
@@ -9,7 +9,12 @@ For every available shelter:
     4. Measure average flood exposure
     5. Calculate shelter suitability
 
-The system then selects the most suitable shelter.
+The system then identifies the most suitable
+GCC relief centre.
+
+Important:
+GCC occupancy is not available for every centre.
+Unknown occupancy is preserved as unknown.
 """
 
 
@@ -28,7 +33,7 @@ from backend.routing import (
 )
 
 from backend.shelter import (
-    load_shelters,
+    load_gcc_shelters,
     select_shelter,
     calculate_shelter_score
 )
@@ -97,12 +102,12 @@ def calculate_shelter_routes(
     network_distance=10000
 ):
     """
-    Calculate risk-aware routes to all
-    available shelters.
+    Calculate risk-aware routes to GCC
+    relief centres.
     """
 
     # --------------------------------------------------
-    # Load road network
+    # Load real OSM road network
     # --------------------------------------------------
 
     graph = load_road_network(
@@ -118,7 +123,7 @@ def calculate_shelter_routes(
     flood = load_flood_hazard()
 
     # --------------------------------------------------
-    # Apply spatial road exposure
+    # Apply spatial flood exposure
     # --------------------------------------------------
 
     graph = calculate_road_exposure(
@@ -136,20 +141,31 @@ def calculate_shelter_routes(
         start_longitude
     )
 
-    shelters = load_shelters()
+    # --------------------------------------------------
+    # Load official GCC relief centres
+    # --------------------------------------------------
+
+    shelters = load_gcc_shelters()
 
     candidates = []
 
+    skipped_status = 0
+    skipped_route = 0
+
     # --------------------------------------------------
-    # Evaluate every shelter
+    # Evaluate every GCC relief centre
     # --------------------------------------------------
 
     for shelter in shelters:
 
-        if shelter[
-            "available_capacity"
-        ] <= 0:
+        # Respect an explicit GCC "No" status.
+        status = shelter.get("status")
 
+        if (
+            status is not None
+            and str(status).strip().lower() == "no"
+        ):
+            skipped_status += 1
             continue
 
         shelter_node = find_nearest_node(
@@ -169,7 +185,7 @@ def calculate_shelter_routes(
             "route_found",
             False
         ):
-
+            skipped_route += 1
             continue
 
         route = route_result.get(
@@ -190,12 +206,12 @@ def calculate_shelter_routes(
         score = calculate_shelter_score(
             distance_km=distance_km,
             route_exposure=exposure,
-            available_capacity=shelter[
+            available_capacity=shelter.get(
                 "available_capacity"
-            ],
-            accessibility=shelter[
+            ),
+            accessibility=shelter.get(
                 "accessibility"
-            ]
+            )
         )
 
         candidates.append({
@@ -239,14 +255,25 @@ def calculate_shelter_routes(
         "start": {
             "latitude":
                 start_latitude,
+
             "longitude":
                 start_longitude,
+
             "road_node":
                 start_node
         },
 
         "flood_probability":
             flood_probability,
+
+        "shelters_evaluated":
+            len(candidates),
+
+        "shelters_skipped_status":
+            skipped_status,
+
+        "shelters_skipped_route":
+            skipped_route,
 
         "candidate_shelters":
             candidates,

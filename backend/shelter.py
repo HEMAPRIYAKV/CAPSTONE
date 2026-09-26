@@ -1,17 +1,23 @@
 """
 Shelter Management Module
 
-Loads candidate shelters and provides the
-information required by the evacuation system.
+Supports both:
+
+1. Local development shelters
+2. Official GCC relief-centre data
 
 Shelter suitability considers:
 
     - route distance
     - route flood exposure
-    - available capacity
-    - accessibility
-"""
+    - available capacity when reported
+    - accessibility when reported
 
+Important:
+GCC records may not contain current occupancy or
+accessibility information. Unknown values are kept
+as unknown rather than being treated as zero/false.
+"""
 
 import csv
 import os
@@ -27,7 +33,7 @@ SHELTER_DATA_PATH = os.path.join(
 
 def load_shelters():
     """
-    Load shelters from the local CSV dataset.
+    Load development shelters from the local CSV dataset.
     """
 
     if not os.path.exists(SHELTER_DATA_PATH):
@@ -66,7 +72,11 @@ def load_shelters():
                 "accessibility":
                     row[
                         "accessibility"
-                    ].strip().lower() == "true"
+                    ].strip().lower() == "true",
+
+                "occupancy_data_available": True,
+                "accessibility_data_available": True,
+                "source": "development_csv"
             })
 
     return shelters
@@ -79,17 +89,23 @@ def calculate_shelter_score(
     accessibility
 ):
     """
-    Calculate a suitability score.
+    Calculate a prototype shelter suitability score.
 
     Lower score = more suitable.
 
-    This is a prototype engineering score and
-    can later be calibrated experimentally.
+    Unknown capacity/accessibility values do not
+    automatically make a shelter invalid.
     """
 
     capacity_penalty = 0.0
 
-    if available_capacity <= 0:
+    # Capacity is unknown.
+    if available_capacity is None:
+
+        capacity_penalty = 0.0
+
+    # Capacity is known.
+    elif available_capacity <= 0:
 
         return float("inf")
 
@@ -101,11 +117,19 @@ def calculate_shelter_score(
 
         capacity_penalty = 5.0
 
-    accessibility_penalty = (
-        0.0
-        if accessibility
-        else 10.0
-    )
+    # Accessibility is unknown.
+    if accessibility is None:
+
+        accessibility_penalty = 0.0
+
+    # Accessibility is known.
+    else:
+
+        accessibility_penalty = (
+            0.0
+            if accessibility
+            else 10.0
+        )
 
     return (
         distance_km
@@ -118,21 +142,31 @@ def calculate_shelter_score(
     )
 
 
-def select_shelter(
-    candidates
-):
+def select_shelter(candidates):
     """
-    Select the candidate with the
-    lowest suitability score.
+    Select the candidate with the lowest
+    suitability score.
+
+    Candidates with known zero capacity are
+    excluded.
+
+    Candidates with unknown capacity remain
+    eligible, because unknown does not mean full
+    or empty.
     """
 
     valid_candidates = [
         candidate
         for candidate in candidates
-        if candidate.get(
-            "available_capacity",
-            0
-        ) > 0
+        if (
+            candidate.get(
+                "available_capacity"
+            ) is None
+            or
+            candidate.get(
+                "available_capacity"
+            ) > 0
+        )
     ]
 
     if not valid_candidates:
@@ -147,3 +181,21 @@ def select_shelter(
     )
 
     return valid_candidates[0]
+def load_gcc_shelters():
+    """
+    Load official GCC relief-centre records.
+
+    The data is fetched from the Greater Chennai
+    Corporation GIS service.
+    """
+
+    from backend.gcc_shelter_service import (
+        fetch_gcc_relief_centres
+    )
+
+    shelters = fetch_gcc_relief_centres()
+
+    for shelter in shelters:
+        shelter["source"] = "gcc_gis"
+
+    return shelters
