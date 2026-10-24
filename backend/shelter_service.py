@@ -39,6 +39,49 @@ from backend.shelter import (
 )
 
 
+# Cached static evacuation infrastructure
+_CACHED_GRAPH = None
+_CACHED_SHELTERS = None
+_CACHED_NETWORK_DISTANCE = None
+
+
+def calculate_geographic_distance_km(
+    latitude1,
+    longitude1,
+    latitude2,
+    longitude2
+):
+    """
+    Calculate straight-line geographic distance
+    between two latitude/longitude points.
+    """
+
+    from math import radians, sin, cos, sqrt, atan2
+
+    earth_radius_km = 6371.0
+
+    lat1 = radians(latitude1)
+    lat2 = radians(latitude2)
+
+    delta_lat = radians(latitude2 - latitude1)
+    delta_lon = radians(longitude2 - longitude1)
+
+    a = (
+        sin(delta_lat / 2) ** 2
+        +
+        cos(lat1)
+        * cos(lat2)
+        * sin(delta_lon / 2) ** 2
+    )
+
+    c = 2 * atan2(
+        sqrt(a),
+        sqrt(1 - a)
+    )
+
+    return earth_radius_km * c
+
+
 def calculate_route_exposure(
     graph,
     route
@@ -106,30 +149,39 @@ def calculate_shelter_routes(
     relief centres.
     """
 
-    # --------------------------------------------------
-    # Load real OSM road network
-    # --------------------------------------------------
-
-    graph = load_road_network(
-        start_latitude,
-        start_longitude,
-        network_distance
-    )
+    global _CACHED_GRAPH
+    global _CACHED_SHELTERS
+    global _CACHED_NETWORK_DISTANCE
 
     # --------------------------------------------------
-    # Load flood hazard map
+    # Load or reuse real OSM road network
     # --------------------------------------------------
 
-    flood = load_flood_hazard()
+    if (
+        _CACHED_GRAPH is None
+        or _CACHED_NETWORK_DISTANCE != network_distance
+    ):
+        print("Building road network cache...")
 
-    # --------------------------------------------------
-    # Apply spatial flood exposure
-    # --------------------------------------------------
+        graph = load_road_network(
+            start_latitude,
+            start_longitude,
+            network_distance
+        )
 
-    graph = calculate_road_exposure(
-        graph,
-        flood
-    )
+        flood = load_flood_hazard()
+
+        graph = calculate_road_exposure(
+            graph,
+            flood
+        )
+
+        _CACHED_GRAPH = graph
+        _CACHED_NETWORK_DISTANCE = network_distance
+
+    else:
+        print("Using cached road network...")
+        graph = _CACHED_GRAPH
 
     # --------------------------------------------------
     # Find user's nearest road node
@@ -142,10 +194,16 @@ def calculate_shelter_routes(
     )
 
     # --------------------------------------------------
-    # Load official GCC relief centres
+    # Load or reuse GCC relief centres
     # --------------------------------------------------
 
-    shelters = load_gcc_shelters()
+    if _CACHED_SHELTERS is None:
+        print("Loading GCC shelter cache...")
+        _CACHED_SHELTERS = load_gcc_shelters()
+    else:
+        print("Using cached GCC shelters...")
+
+    shelters = _CACHED_SHELTERS
 
     candidates = []
 
@@ -153,8 +211,10 @@ def calculate_shelter_routes(
     skipped_route = 0
 
     # --------------------------------------------------
-    # Evaluate every GCC relief centre
+    # Pre-filter geographically nearby shelters
     # --------------------------------------------------
+
+    eligible_shelters = []
 
     for shelter in shelters:
 
@@ -167,6 +227,39 @@ def calculate_shelter_routes(
         ):
             skipped_status += 1
             continue
+
+        geographic_distance = (
+            calculate_geographic_distance_km(
+                start_latitude,
+                start_longitude,
+                shelter["latitude"],
+                shelter["longitude"]
+            )
+        )
+
+        eligible_shelters.append(
+            (
+                geographic_distance,
+                shelter
+            )
+        )
+
+    eligible_shelters.sort(
+        key=lambda item: item[0]
+    )
+
+    # Run expensive risk-aware A* only for
+    # the geographically nearest candidates.
+    route_candidates = [
+        shelter
+        for _, shelter in eligible_shelters[:15]
+    ]
+
+    # --------------------------------------------------
+    # Evaluate shortlisted GCC relief centres
+    # --------------------------------------------------
+
+    for shelter in route_candidates:
 
         shelter_node = find_nearest_node(
             graph,
@@ -281,3 +374,4 @@ def calculate_shelter_routes(
         "recommended_shelter":
             recommended
     }
+
