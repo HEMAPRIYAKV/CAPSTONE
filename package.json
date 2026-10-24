@@ -1,0 +1,10 @@
+
+{
+  "name": "capstone",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "pnpm --filter @workspace/drip-platform dev",
+    "build:frontend": "pnpm --filter @workspace/drip-platform build"
+  }
+}
